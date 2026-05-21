@@ -1,0 +1,115 @@
+# Grafana Alloy — log shipper (replaces Promtail)
+# Helm chart: grafana/alloy
+# Runs as DaemonSet, scrapes pod logs + systemd journal, ships to Loki
+alloy:
+  configMap:
+    create: true
+    content: |
+      // ──────────────────────────────────────────────
+      // Pod logs — all namespaces
+      // ──────────────────────────────────────────────
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      discovery.relabel "pod_logs" {
+        targets = discovery.kubernetes.pods.targets
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          action        = "keep"
+          regex         = ".+"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "pod"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label  = "container"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app"]
+          target_label  = "app"
+        }
+        rule {
+          target_label = "cluster"
+          replacement  = "k3s-lan"
+        }
+      }
+
+      loki.source.kubernetes "pods" {
+        targets    = discovery.relabel.pod_logs.output
+        forward_to = [loki.write.default.receiver]
+      }
+
+      // ──────────────────────────────────────────────
+      // systemd journal (k3s, kubelet, wireguard, etc.)
+      // ──────────────────────────────────────────────
+      loki.source.journal "host" {
+        forward_to    = [loki.write.default.receiver]
+        relabeling {
+          source_labels = ["__journal__systemd_unit"]
+          target_label  = "unit"
+        }
+        relabeling {
+          target_label = "cluster"
+          replacement  = "k3s-lan"
+        }
+        relabeling {
+          source_labels = ["__journal__hostname"]
+          target_label  = "node"
+        }
+      }
+
+      // ──────────────────────────────────────────────
+      // Loki sink
+      // ──────────────────────────────────────────────
+      loki.write "default" {
+        endpoint {
+          url = "http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push"
+        }
+      }
+
+controller:
+  type: daemonset
+
+# Needs host filesystem access for journal + container logs
+tolerations:
+  - effect: NoSchedule
+    operator: Exists
+  - effect: NoExecute
+    operator: Exists
+
+# Mount host paths
+extraVolumes:
+  - name: varlog
+    hostPath:
+      path: /var/log
+  - name: varlibdockercontainers
+    hostPath:
+      path: /var/lib/docker/containers
+  - name: varlogjournal
+    hostPath:
+      path: /var/log/journal
+
+extraVolumeMounts:
+  - name: varlog
+    mountPath: /var/log
+    readOnly: true
+  - name: varlibdockercontainers
+    mountPath: /var/lib/docker/containers
+    readOnly: true
+  - name: varlogjournal
+    mountPath: /var/log/journal
+    readOnly: true
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 256Mi

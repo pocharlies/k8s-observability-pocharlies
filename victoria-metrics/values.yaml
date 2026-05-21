@@ -1,0 +1,96 @@
+# VictoriaMetrics k8s-stack — drop-in for kube-prometheus-stack, lighter
+victoria-metrics-operator:
+  enabled: true
+
+vmsingle:
+  enabled: true
+  spec:
+    retentionPeriod: "90d"
+    storage:
+      accessModes: [ReadWriteOnce]
+      storageClassName: longhorn
+      resources:
+        requests:
+          storage: 50Gi
+    nodeSelector:
+      topology: lan
+      kubernetes.io/arch: amd64
+
+vmcluster:
+  enabled: false   # single-node mode
+
+vmagent:
+  enabled: true
+  spec:
+    selectAllByDefault: true
+    nodeSelector:
+      topology: lan
+
+vmalert:
+  enabled: true
+  spec:
+    nodeSelector:
+      topology: lan
+  remoteWriteVMAgent: false
+
+alertmanager:
+  enabled: true
+  spec:
+    nodeSelector:
+      topology: lan
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          storageClassName: longhorn
+          resources:
+            requests:
+              storage: 5Gi
+
+grafana:
+  enabled: true
+  adminPassword: "ChangeMe-Grafana-Bootstrap-2026!"
+  persistence:
+    enabled: true
+    storageClassName: longhorn
+    size: 10Gi
+  nodeSelector:
+    topology: lan
+  service:
+    type: ClusterIP
+  # disable ingress here, use Traefik IngressRoute
+  ingress:
+    enabled: false
+  sidecar:
+    dashboards:
+      enabled: true
+      defaultFolderName: General
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: ALL
+    datasources:
+      enabled: true
+      searchNamespace: ALL
+  defaultDashboardsEnabled: true
+  defaultDashboardsTimezone: Europe/Madrid
+
+# Standard exporters
+kubeStateMetrics:
+  enabled: true
+  nodeSelector:
+    topology: lan
+
+nodeExporter:
+  enabled: true
+
+prometheus-node-exporter:
+  hostNetwork: true
+  nodeSelector:
+    topology: lan
+  tolerations:
+    - operator: Exists   # let it run on tainted nodes too
+
+# Don't enable the kube-state-metrics subchart on edge (sauvage)
+kube-state-metrics:
+  nodeSelector:
+    topology: lan
