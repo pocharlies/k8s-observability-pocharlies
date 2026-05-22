@@ -169,5 +169,8 @@ prometheus-node-exporter:
 
 # Don't enable the kube-state-metrics subchart on edge (sauvage)
 kube-state-metrics:
+  metricLabelsAllowlist:
+    - services=[infra]
+    - namespaces=[infra]
   nodeSelector:
     topology: lan
