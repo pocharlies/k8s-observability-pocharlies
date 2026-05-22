@@ -52,6 +52,9 @@ vmcluster:
 vmagent:
   enabled: true
   spec:
+    extraArgs:
+      promscrape.maxScrapeSize: "67108864"
+      promscrape.streamParse: "true"
     selectAllByDefault: true
     nodeSelector:
       topology: lan
