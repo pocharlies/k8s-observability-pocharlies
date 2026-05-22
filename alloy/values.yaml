@@ -51,17 +51,9 @@ alloy:
       // ──────────────────────────────────────────────
       loki.source.journal "host" {
         forward_to    = [loki.write.default.receiver]
-        relabeling {
-          source_labels = ["__journal__systemd_unit"]
-          target_label  = "unit"
-        }
-        relabeling {
-          target_label = "cluster"
-          replacement  = "k3s-lan"
-        }
-        relabeling {
-          source_labels = ["__journal__hostname"]
-          target_label  = "node"
+        labels        = {
+          cluster = "k3s-lan",
+          job     = "systemd-journal",
         }
       }
 
