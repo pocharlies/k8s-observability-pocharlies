@@ -38,6 +38,10 @@ vmalert:
 alertmanager:
   enabled: true
   spec:
+    hostAliases:
+      - ip: "100.109.183.9"
+        hostnames:
+          - synapse.e-dani.com
     nodeSelector:
       topology: lan
       kubernetes.io/hostname: ubuntu
