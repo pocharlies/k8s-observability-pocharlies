@@ -54,8 +54,8 @@ spec:
         - https://harbor.e-dani.com/
         - https://skirmshop.e-dani.com/bundles/
         - https://skirmshop.e-dani.com/labels/
-        - https://skirmshop.e-dani.com/labels-ups/
-        - https://skirmshop.e-dani.com/picker/
+        - https://skirmshop.e-dani.com/labels-ups/health
+        - https://skirmshop.e-dani.com/picker/health
         - https://skirmshop.e-dani.com/sii/
         - https://whatsapp.e-dani.com/
 ---
