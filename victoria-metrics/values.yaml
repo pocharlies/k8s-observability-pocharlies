@@ -2,6 +2,21 @@
 victoria-metrics-operator:
   enabled: true
 
+defaultRules:
+  groups:
+    kubernetesSystemControllerManager:
+      create: false
+    kubeScheduler:
+      create: false
+    kubernetesSystemScheduler:
+      create: false
+
+kubeControllerManager:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+
 vmsingle:
   enabled: true
   spec:
