@@ -10,6 +10,10 @@ alloy:
       // ──────────────────────────────────────────────
       discovery.kubernetes "pods" {
         role = "pod"
+        selectors {
+          role  = "pod"
+          field = "spec.nodeName=" + sys.env("K8S_NODE_NAME")
+        }
       }
 
       discovery.relabel "pod_logs" {
@@ -51,6 +55,8 @@ alloy:
       // ──────────────────────────────────────────────
       loki.source.journal "host" {
         forward_to    = [loki.write.default.receiver]
+        path          = "/var/log/journal"
+        max_age       = "30m"
         labels        = {
           cluster = "k3s-lan",
           job     = "systemd-journal",
