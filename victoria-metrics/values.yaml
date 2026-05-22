@@ -5,6 +5,14 @@ victoria-metrics-operator:
 vmsingle:
   enabled: true
   spec:
+    useDefaultResources: false
+    resources:
+      requests:
+        cpu: 300m
+        memory: 1Gi
+      limits:
+        cpu: "2"
+        memory: 4Gi
     extraArgs:
       maxLabelsPerTimeseries: "200"
     retentionPeriod: "90d"
