@@ -76,6 +76,13 @@ alloy:
 
 controller:
   type: daemonset
+  nodeSelector:
+    topology: lan
+  tolerations:
+    - key: dedicated
+      operator: Equal
+      value: llm
+      effect: NoSchedule
 
 # Needs host filesystem access for journal + container logs
 tolerations:
