@@ -35,7 +35,7 @@ vmsingle:
         memory: 12Gi
     extraArgs:
       maxLabelsPerTimeseries: "200"
-    retentionPeriod: "90d"
+    retentionPeriod: "15d"
     storage:
       accessModes: [ReadWriteOnce]
       storageClassName: longhorn
@@ -173,6 +173,27 @@ prometheus-node-exporter:
       memory: 32Mi
     limits:
       memory: 128Mi
+  # NOTE: this list REPLACES the chart's default extraArgs, so we must
+  # repeat the upstream filesystem exclude flags in addition to enabling
+  # the textfile collector.
+  extraArgs:
+    - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+    - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|erofs|sysfs|tracefs)$
+    - --collector.textfile.directory=/host/root/var/lib/node_exporter/textfile_collector
+
+# Override cadvisor scrape to drop the high-cardinality `id` cgroup label
+# (every container restart creates new series). Keep only container_* metrics
+# (cadvisor is container-only anyway), then drop the `id` label.
+kubelet:
+  vmScrapes:
+    cadvisor:
+      spec:
+        metricRelabelConfigs:
+          - source_labels: [__name__]
+            regex: "container_.+"
+            action: keep
+          - regex: "id"
+            action: labeldrop
 
 # Don't enable the kube-state-metrics subchart on edge (sauvage)
 kube-state-metrics:
